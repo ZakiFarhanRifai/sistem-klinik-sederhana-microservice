@@ -1,0 +1,176 @@
+services:
+  # ─── DATABASES ───────────────────────────────────────────
+  patient-db:
+    image: mysql:8.4
+    container_name: patient-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: patient_db
+      MYSQL_USER: patient_user
+      MYSQL_PASSWORD: patient_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - patient_mysql_data:/var/lib/mysql
+    networks:
+      - hospital-network
+    restart: unless-stopped
+
+  appointment-db:
+    image: mongo:8
+    container_name: appointment-db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: appointment_user
+      MONGO_INITDB_ROOT_PASSWORD: appointment_password
+      MONGO_INITDB_DATABASE: appointment_db
+    ports:
+      - "27018:27017"
+    volumes:
+      - appointment_mongo_data:/data/db
+    networks:
+      - hospital-network
+    restart: unless-stopped
+
+  record-db:
+    image: postgres:17
+    container_name: record-db
+    environment:
+      POSTGRES_DB: record_db
+      POSTGRES_USER: record_user
+      POSTGRES_PASSWORD: record_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - record_postgres_data:/var/lib/postgresql/data
+    networks:
+      - hospital-network
+    restart: unless-stopped
+
+  # ─── SERVICES ────────────────────────────────────────────
+  patient-service:
+    build:
+      context: ./patient-service
+    container_name: patient-service
+    ports:
+      - "3001:3001"
+    environment:
+      DB_HOST: patient-db
+      DB_NAME: patient_db
+      DB_USER: patient_user
+      DB_PASSWORD: patient_password
+    depends_on:
+      - patient-db
+    networks:
+      - hospital-network
+    restart: unless-stopped
+
+  doctor-service:
+    build:
+      context: ./doctor-service
+    container_name: doctor-service
+    ports:
+      - "3002:3002"
+    networks:
+      - hospital-network
+    restart: unless-stopped
+
+  appointment-service:
+    build:
+      context: ./appointment-service
+    container_name: appointment-service
+    ports:
+      - "3003:3003"
+    environment:
+      PATIENT_SERVICE_URL: http://patient-service:3001
+      DOCTOR_SERVICE_URL: http://doctor-service:3002
+      MONGO_URI: mongodb://appointment_user:appointment_password@appointment-db:27017/appointment_db?authSource=admin
+    depends_on:
+      - appointment-db
+      - patient-service
+      - doctor-service
+    networks:
+      - hospital-network
+    restart: unless-stopped
+
+  medical-record-service:
+    build:
+      context: ./medical-record-service
+    container_name: medical-record-service
+    ports:
+      - "3004:3004"
+    environment:
+      DB_HOST: record-db
+      DB_NAME: record_db
+      DB_USER: record_user
+      DB_PASSWORD: record_password
+      DB_PORT: 5432
+    depends_on:
+      - record-db
+    networks:
+      - hospital-network
+    restart: unless-stopped
+
+  # ─── GATEWAYS ────────────────────────────────────────────
+  api-gateway:
+    build:
+      context: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      PATIENT_SERVICE_URL: http://patient-service:3001
+      DOCTOR_SERVICE_URL: http://doctor-service:3002
+      APPOINTMENT_SERVICE_URL: http://appointment-service:3003
+      RECORD_SERVICE_URL: http://medical-record-service:3004
+    depends_on:
+      - patient-service
+      - doctor-service
+      - appointment-service
+      - medical-record-service
+    networks:
+      - hospital-network
+    restart: unless-stopped
+
+  graphql-gateway:
+    build:
+      context: ./graphql-gateway
+    container_name: graphql-gateway
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      PATIENT_SERVICE_URL: http://patient-service:3001
+      DOCTOR_SERVICE_URL: http://doctor-service:3002
+      APPOINTMENT_SERVICE_URL: http://appointment-service:3003
+      RECORD_SERVICE_URL: http://medical-record-service:3004
+    depends_on:
+      - patient-service
+      - doctor-service
+      - appointment-service
+      - medical-record-service
+    networks:
+      - hospital-network
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: api-gateway-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - api-gateway
+      - graphql-gateway
+    networks:
+      - hospital-network
+    restart: unless-stopped
+
+networks:
+  hospital-network:
+    driver: bridge
+
+volumes:
+  patient_mysql_data:
+  appointment_mongo_data:
+  record_postgres_data:
