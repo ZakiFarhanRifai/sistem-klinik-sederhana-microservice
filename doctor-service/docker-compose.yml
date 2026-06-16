@@ -1,0 +1,56 @@
+services:
+  doctor-db:
+    image: mysql:8.4
+    container_name: doctor-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: doctor_db
+      MYSQL_USER: doctor_user
+      MYSQL_PASSWORD: doctor_password
+    ports:
+      - "3308:3306"
+    volumes:
+      - doctor_mysql_data:/var/lib/mysql
+    networks:
+      - doctor-network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-proot_password",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  doctor-service:
+    build:
+      context: ./doctor-service
+    container_name: doctor-service
+    ports:
+      - "3002:3002"
+    environment:
+      DB_HOST: doctor-db
+      DB_NAME: doctor_db
+      DB_USER: doctor_user
+      DB_PASSWORD: doctor_password
+    depends_on:
+      doctor-db:
+        condition: service_healthy
+    networks:
+      - doctor-network
+    restart: unless-stopped
+
+networks:
+  doctor-network:
+    driver: bridge
+
+volumes:
+  doctor_mysql_data:

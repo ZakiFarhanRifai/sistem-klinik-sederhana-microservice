@@ -1,0 +1,28 @@
+services:
+  appointment-db:
+    image: mongo:8
+    container_name: appointment-db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: appointment_user
+      MONGO_INITDB_ROOT_PASSWORD: appointment_password
+      MONGO_INITDB_DATABASE: appointment_db
+    ports:
+      - "27018:27017"
+    volumes:
+      - appointment_mongo_data:/data/db
+    restart: unless-stopped
+
+  appointment-service:
+    build:
+      context: ./appointment-service
+    container_name: appointment-service
+    ports:
+      - "3003:3003"
+    environment:
+      MONGO_URI: mongodb://appointment_user:appointment_password@appointment-db:27017/appointment_db?authSource=admin
+    depends_on:
+      - appointment-db
+    restart: unless-stopped
+
+volumes:
+  appointment_mongo_data:

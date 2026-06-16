@@ -1,0 +1,47 @@
+services:
+  record-db:
+    image: postgres:17
+    container_name: record-db
+    environment:
+      POSTGRES_DB: record_db
+      POSTGRES_USER: record_user
+      POSTGRES_PASSWORD: record_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - record_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U record_user -d record_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - hospital-network
+
+  medical-record-service:
+    build:
+      context: .
+    container_name: medical-record-service
+    ports:
+      - "3004:3004"
+    environment:
+      DB_HOST: record-db
+      DB_PORT: 5432
+      DB_NAME: record_db
+      DB_USER: record_user
+      DB_PASSWORD: record_password
+    depends_on:
+      record-db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - hospital-network
+
+networks:
+  hospital-network:
+    external: true
+    name: sistem-klinik-sederhana-microservice_hospital-network
+
+volumes:
+  record_postgres_data:

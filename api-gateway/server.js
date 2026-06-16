@@ -225,6 +225,18 @@ app.put("/records/:id", async (req, res) => {
   }
 });
 
+app.delete("/doctors/:id", async (req, res) => {
+  try {
+    const response = await fetch(`${DOCTOR_SERVICE_URL}/doctors/${req.params.id}`, {
+      method: "DELETE"
+    });
+    const data = await response.json();
+    res.status(response.status).json({ gateway: "api-gateway", source: "doctor-service", result: data });
+  } catch (error) {
+    res.status(500).json({ message: "Gagal menghubungi Doctor Service", error: error.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`API Gateway berjalan pada port ${PORT}`);
 });

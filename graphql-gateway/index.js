@@ -93,18 +93,22 @@ const typeDefs = `#graphql
     # Patients
     createPatient(name: String!, age: Int!, gender: String!, phone: String!): Patient
     updatePatient(id: ID!, name: String, age: Int, gender: String, phone: String): Patient
+    deletePatient(id: ID!): Patient 
 
     # Doctors
     createDoctor(name: String!, specialization: String!, phone: String!): Doctor
     updateDoctor(id: ID!, name: String, specialization: String, phone: String): Doctor
+    deleteDoctor(id: ID!): Doctor
 
     # Appointments
     createAppointment(patientId: Int!, doctorId: Int!, date: String!, time: String!, status: String, notes: String): Appointment
     updateAppointment(id: ID!, patientId: Int, doctorId: Int, date: String, time: String, status: String, notes: String): Appointment
+    deleteAppointment(id: ID!): Appointment
 
     # Medical Records
     createRecord(patientId: Int!, doctorId: Int!, date: String!, diagnosis: String!, treatment: String!, prescription: String, notes: String): MedicalRecord
     updateRecord(id: ID!, patientId: Int, doctorId: Int, date: String, diagnosis: String, treatment: String, prescription: String, notes: String): MedicalRecord
+    deleteRecord(id: ID!): MedicalRecord
   }
 `;
 
@@ -183,6 +187,12 @@ const resolvers = {
       });
       return result.data;
     },
+    deletePatient: async (_, { id }) => {  // ← harusnya di sini
+      const result = await fetchJson(`${PATIENT_SERVICE_URL}/patients/${id}`, {
+        method: "DELETE"
+      });
+      return result.data;
+    },
 
     // Doctors
     createDoctor: async (_, args) => {
@@ -197,6 +207,10 @@ const resolvers = {
         method: "PUT",
         body: JSON.stringify(args)
       });
+      return result.data;
+    },
+    deleteDoctor: async (_, { id }) => {
+      const result = await fetchJson(`${DOCTOR_SERVICE_URL}/doctors/${id}`, { method: "DELETE" });
       return result.data;
     },
 
@@ -215,6 +229,10 @@ const resolvers = {
       });
       return result.data;
     },
+    deleteAppointment: async (_, { id }) => {
+      const result = await fetchJson(`${APPOINTMENT_SERVICE_URL}/appointments/${id}`, { method: "DELETE" });
+      return result.data;
+    },
 
     // Medical Records
     createRecord: async (_, args) => {
@@ -230,7 +248,11 @@ const resolvers = {
         body: JSON.stringify(args)
       });
       return result.data;
-    }
+    },
+    deleteRecord: async (_, { id }) => {
+      const result = await fetchJson(`${RECORD_SERVICE_URL}/records/${id}`, { method: "DELETE" });
+      return result.data;
+    },
   }
 };
 

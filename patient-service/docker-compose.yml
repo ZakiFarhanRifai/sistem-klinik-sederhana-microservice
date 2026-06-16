@@ -1,0 +1,56 @@
+services:
+    patient-db:
+        image: mysql:8.4
+        container_name: patient-db
+        environment:
+            MYSQL_ROOT_PASSWORD: root_password
+            MYSQL_DATABASE: patient_db
+            MYSQL_USER: patient_user
+            MYSQL_PASSWORD: patient_password
+        ports:
+            - "3307:3306"
+        volumes:
+            - patient_mysql_data:/var/lib/mysql
+        networks:
+            - patient-network
+        restart: unless-stopped
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "mysqladmin",
+                    "ping",
+                    "-h",
+                    "localhost",
+                    "-u",
+                    "root",
+                    "-proot_password",
+                ]
+            interval: 5s
+            timeout: 5s
+            retries: 10
+
+    patient-service:
+        build:
+            context: .
+        container_name: patient-service
+        ports:
+            - "3001:3001"
+        environment:
+            DB_HOST: patient-db
+            DB_NAME: patient_db
+            DB_USER: patient_user
+            DB_PASSWORD: patient_password
+        depends_on:
+            patient-db:
+                condition: service_healthy
+        networks:
+            - patient-network
+        restart: unless-stopped
+
+networks:
+    patient-network:
+        driver: bridge
+
+volumes:
+    patient_mysql_data:
