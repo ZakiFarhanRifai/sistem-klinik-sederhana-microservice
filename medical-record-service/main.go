@@ -79,7 +79,7 @@ func main() {
 		})
 	})
 
-	// GET ALL
+	
 	r.GET("/records", func(c *gin.Context) {
 		rows, err := db.Query(`
 			SELECT id, patient_id, doctor_id, date, diagnosis, treatment, prescription, notes
@@ -104,7 +104,7 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"service": "medical-record-service", "data": records})
 	})
 
-	// GET BY ID
+
 	r.GET("/records/:id", func(c *gin.Context) {
 		id, _ := strconv.Atoi(c.Param("id"))
 		var rec MedicalRecord
@@ -122,7 +122,7 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"service": "medical-record-service", "data": rec})
 	})
 
-	// POST
+
 	r.POST("/records", func(c *gin.Context) {
 		var body MedicalRecord
 		if err := c.ShouldBindJSON(&body); err != nil {
@@ -145,7 +145,7 @@ func main() {
 		})
 	})
 
-	// PUT
+
 	r.PUT("/records/:id", func(c *gin.Context) {
 		id, _ := strconv.Atoi(c.Param("id"))
 		var body MedicalRecord
@@ -154,7 +154,6 @@ func main() {
 			return
 		}
 
-		// Ambil data lama dulu
 		var rec MedicalRecord
 		err := db.QueryRow(`
 			SELECT id, patient_id, doctor_id, date, diagnosis, treatment, prescription, notes
@@ -190,7 +189,6 @@ func main() {
 		})
 	})
 
-	// DELETE
 	r.DELETE("/records/:id", func(c *gin.Context) {
 		id, _ := strconv.Atoi(c.Param("id"))
 		result, err := db.Exec("DELETE FROM medical_records WHERE id = $1", id)

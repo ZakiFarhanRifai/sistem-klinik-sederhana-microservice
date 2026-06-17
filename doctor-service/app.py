@@ -4,9 +4,7 @@ import os
 
 app = Flask(__name__)
 
-# ==========================
-# DATABASE CONNECTION
-# ==========================
+
 def get_connection():
     return mysql.connector.connect(
         host=os.getenv("DB_HOST", "doctor-db"),
@@ -15,9 +13,7 @@ def get_connection():
         database=os.getenv("DB_NAME", "doctor_db")
     )
 
-# ==========================
-# INITIALIZE TABLE
-# ==========================
+
 def init_db():
     conn = get_connection()
     cursor = conn.cursor()
@@ -48,9 +44,7 @@ def init_db():
     cursor.close()
     conn.close()
 
-# ==========================
-# HEALTH CHECK
-# ==========================
+
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({
@@ -61,9 +55,7 @@ def health():
         "status": "running"
     })
 
-# ==========================
-# GET ALL DOCTORS
-# ==========================
+
 @app.route("/doctors", methods=["GET"])
 def get_doctors():
     conn = get_connection()
@@ -80,9 +72,6 @@ def get_doctors():
         "data": doctors
     })
 
-# ==========================
-# GET DOCTOR BY ID
-# ==========================
 @app.route("/doctors/<int:id>", methods=["GET"])
 def get_doctor(id):
     conn = get_connection()
@@ -104,9 +93,7 @@ def get_doctor(id):
         "data": doctor
     })
 
-# ==========================
-# CREATE DOCTOR
-# ==========================
+
 @app.route("/doctors", methods=["POST"])
 def create_doctor():
     body = request.get_json()
@@ -141,9 +128,7 @@ def create_doctor():
         }
     }), 201
 
-# ==========================
-# UPDATE DOCTOR
-# ==========================
+
 @app.route("/doctors/<int:id>", methods=["PUT"])
 def update_doctor(id):
     body = request.get_json()
@@ -181,9 +166,7 @@ def update_doctor(id):
         "message": "Data dokter berhasil diupdate"
     })
 
-# ==========================
-# DELETE DOCTOR
-# ==========================
+
 @app.route("/doctors/<int:id>", methods=["DELETE"])
 def delete_doctor(id):
     conn = get_connection()
@@ -211,9 +194,7 @@ def delete_doctor(id):
         "message": "Dokter berhasil dihapus"
     })
 
-# ==========================
-# START APP
-# ==========================
+
 if __name__ == "__main__":
     init_db()
     app.run(host="0.0.0.0", port=3002)
